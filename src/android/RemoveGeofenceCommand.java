@@ -1,7 +1,6 @@
 package com.cowbell.cordova.geofence;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.location.GeofencingClient;
