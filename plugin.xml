@@ -49,6 +49,7 @@
 
 		<preference name="GOOGLE_API_VERSION" default="11.8.0" />
 		<framework src="com.google.android.gms:play-services-location:$GOOGLE_API_VERSION"/>
+		<framework src="androidx.annotation:annotation:1.1.0"/>
         <lib-file src="src/android/libs/gson-2.3.jar" />
 
         <config-file target="config.xml" parent="/*">
