@@ -2,7 +2,6 @@ package com.cowbell.cordova.geofence;
 
 import android.app.PendingIntent;
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.common.api.ResultCallback;
@@ -14,6 +13,7 @@ import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import androidx.annotation.NonNull;
 
 import org.apache.cordova.LOG;
 import org.json.JSONException;

@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.LocationServices;
+import androidx.annotation.NonNull;
 
 import java.util.List;
 
