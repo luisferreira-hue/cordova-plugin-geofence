@@ -135,7 +135,8 @@ public class GeofencePlugin extends CordovaPlugin {
     private void initialize(CallbackContext callbackContext) {
         String[] permissions = {
             Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            Manifest.permission.ACCESS_FINE_LOCATION,
+			Manifest.permission.ACCESS_BACKGROUND_LOCATION,
         };
 
         if (!hasPermissions(permissions)) {
