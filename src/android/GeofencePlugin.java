@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GeofencePlugin extends CordovaPlugin {
-    public static final String TAG = "GeofencePlugin";
+    public static final String TAG = "cordova-geofence";
 
     public static final String ERROR_UNKNOWN = "UNKNOWN";
     public static final String ERROR_PERMISSION_DENIED = "PERMISSION_DENIED";
@@ -135,17 +135,21 @@ public class GeofencePlugin extends CordovaPlugin {
     }
 
     private void initialize(CallbackContext callbackContext) {
+		Log.d(TAG, "Initialize empty");
     }
 	
     private void requestPersmissions(CallbackContext callbackContext) {
+		Log.d(TAG, "requestPersmissions");
         String[] permissions = {
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION
         };
 
         if (!hasPermissions(permissions)) {
+			Log.d(TAG, "No permissions, request");
             PermissionHelper.requestPermissions(this, 0, permissions);
         } else {
+			Log.d(TAG, "Has permissions, doing nothing");
             callbackContext.success();
         }
     }
