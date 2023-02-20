@@ -37,6 +37,18 @@ module.exports = {
     initialize: function (success, error) {
         return execPromise(success, error, "GeofencePlugin", "initialize", []);
     },
+   /**
+    * Request permissions geofence plugin
+    *
+    * @name initialize
+    * @param  {Function} success callback
+    * @param  {Function} error callback
+    *
+    * @return {Promise}
+    */
+   requestPersmissions: function (success, error) {
+       return execPromise(success, error, "GeofencePlugin", "requestPersmissions", []);
+   },
     /**
      * Adding new geofence to monitor.
      * Geofence could override the previously one with the same id.
