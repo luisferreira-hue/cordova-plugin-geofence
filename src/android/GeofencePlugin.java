@@ -92,7 +92,7 @@ public class GeofencePlugin extends CordovaPlugin {
                 } else if (action.equals("initialize")) {
                     initialize(callbackContext);
                 } else if (action.equals("requestPermissions")) {
-                    requestPersmissions(callbackContext);
+                    requestPermissions(callbackContext);
                 } else if (action.equals("deviceReady")) {
                     deviceReady();
                 }
