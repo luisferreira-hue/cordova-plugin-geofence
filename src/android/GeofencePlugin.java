@@ -91,7 +91,7 @@ public class GeofencePlugin extends CordovaPlugin {
                     callbackContext.success(Gson.get().toJson(geoNotifications));
                 } else if (action.equals("initialize")) {
                     initialize(callbackContext);
-                } else if (action.equals("requestPersmissions")) {
+                } else if (action.equals("requestPermissions")) {
                     requestPersmissions(callbackContext);
                 } else if (action.equals("deviceReady")) {
                     deviceReady();
@@ -138,7 +138,7 @@ public class GeofencePlugin extends CordovaPlugin {
 		Log.d(TAG, "Initialize empty");
     }
 	
-    private void requestPersmissions(CallbackContext callbackContext) {
+    private void requestPermissions(CallbackContext callbackContext) {
 		Log.d(TAG, "requestPersmissions");
         String[] permissions = {
             Manifest.permission.ACCESS_COARSE_LOCATION,

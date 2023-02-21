@@ -46,8 +46,8 @@ module.exports = {
     *
     * @return {Promise}
     */
-   requestPersmissions: function (success, error) {
-       return execPromise(success, error, "GeofencePlugin", "requestPersmissions", []);
+   requestPermissions: function (success, error) {
+       return execPromise(success, error, "GeofencePlugin", "requestPermissions", []);
    },
     /**
      * Adding new geofence to monitor.
