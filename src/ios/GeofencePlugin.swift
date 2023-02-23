@@ -47,7 +47,39 @@ func log(_ messages: [String]) {
 
 	@objc
     func initialize(_ command: CDVInvokedUrlCommand) {
-        log("Plugin initialization")
+        log("Plugin initialization empty")
+        //let faker = GeofenceFaker(manager: geoNotificationManager)
+        //faker.start()
+
+        // if iOS8 {
+        //     promptForNotificationPermission()
+        // }
+        //
+        // geoNotificationManager = GeoNotificationManager()
+        // geoNotificationManager.registerPermissions()
+        //
+        // let (ok, warnings, errors) = geoNotificationManager.checkRequirements()
+        //
+        // log(warnings)
+        // log(errors)
+
+        let result: CDVPluginResult
+
+        // if ok {
+            result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: warnings.joined(separator: "\n"))
+        // } else {
+            // result = CDVPluginResult(
+                // status: CDVCommandStatus_ILLEGAL_ACCESS_EXCEPTION,
+                // messageAs: (errors + warnings).joined(separator: "\n")
+            // )
+        // }
+
+        commandDelegate!.send(result, callbackId: command.callbackId)
+    }
+	
+	@objc
+    func requestPermissions(_ command: CDVInvokedUrlCommand) {
+        log("Plugin requestPermissions")
         //let faker = GeofenceFaker(manager: geoNotificationManager)
         //faker.start()
 
