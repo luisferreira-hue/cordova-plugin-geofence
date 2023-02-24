@@ -66,7 +66,7 @@ func log(_ messages: [String]) {
         let result: CDVPluginResult
 
         // if ok {
-            result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: warnings.joined(separator: "\n"))
+            result = CDVPluginResult(status: CDVCommandStatus_OK) // , messageAs: warnings.joined(separator: "\n")
         // } else {
             // result = CDVPluginResult(
                 // status: CDVCommandStatus_ILLEGAL_ACCESS_EXCEPTION,
