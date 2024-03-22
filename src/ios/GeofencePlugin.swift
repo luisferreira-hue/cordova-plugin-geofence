@@ -45,7 +45,7 @@ func log(_ messages: [String]) {
         )
     }
 
-	@objc
+    @objc
     func initialize(_ command: CDVInvokedUrlCommand) {
         log("Plugin initialization empty")
         //let faker = GeofenceFaker(manager: geoNotificationManager)
@@ -76,8 +76,8 @@ func log(_ messages: [String]) {
 
         commandDelegate!.send(result, callbackId: command.callbackId)
     }
-	
-	@objc
+    
+    @objc
     func requestPermissions(_ command: CDVInvokedUrlCommand) {
         log("Plugin requestPermissions")
         //let faker = GeofenceFaker(manager: geoNotificationManager)
@@ -130,7 +130,7 @@ func log(_ messages: [String]) {
         )
     }
 
-	@objc
+    @objc
     func addOrUpdate(_ command: CDVInvokedUrlCommand) {
         DispatchQueue.global(priority: priority).async {
             // do some task
@@ -144,7 +144,7 @@ func log(_ messages: [String]) {
         }
     }
 
-	@objc
+    @objc
     func getWatched(_ command: CDVInvokedUrlCommand) {
         DispatchQueue.global(priority: priority).async {
             let watched = self.geoNotificationManager.getWatchedGeoNotifications()!
@@ -156,7 +156,7 @@ func log(_ messages: [String]) {
         }
     }
 
- 	@objc
+    @objc
     func remove(_ command: CDVInvokedUrlCommand) {
         DispatchQueue.global(priority: priority).async {
             for id in command.arguments {
@@ -169,7 +169,7 @@ func log(_ messages: [String]) {
         }
     }
 
-	@objc
+    @objc
     func removeAll(_ command: CDVInvokedUrlCommand) {
         DispatchQueue.global(priority: priority).async {
             self.geoNotificationManager.removeAllGeoNotifications()
@@ -194,7 +194,7 @@ func log(_ messages: [String]) {
     @objc
     func didReceiveLocalNotification (_ notification: Notification) {
         log("didReceiveLocalNotification")
-        if UIApplication.shared.applicationState != UIApplicationState.active {
+        if UIApplication.shared.applicationState != UIApplication.State.active {
             var data = "undefined"
             if let uiNotification = notification.object as? UILocalNotification {
                 if let notificationData = uiNotification.userInfo?["geofence.notification.data"] as? String {
@@ -312,7 +312,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         locationManager.startMonitoring(for: region)
     }
 
-	// TODO Make notification settings synchronous
+    // TODO Make notification settings synchronous
     func checkRequirements() -> (Bool, [String], [String]) {
         var errors = [String]()
         var warnings = [String]()
@@ -332,27 +332,27 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         }
 
         if (iOS8) {
-			DispatchQueue.main.async { // Due to async, the return of checkRequirements is not ok
-	            if let notificationSettings = UIApplication.shared.currentUserNotificationSettings {
-	                if notificationSettings.types == UIUserNotificationType() {
-	                    errors.append("Error: notification permission missing")
-	                } else {
-	                    if !notificationSettings.types.contains(.sound) {
-	                        warnings.append("Warning: notification settings - sound permission missing")
-	                    }
+            DispatchQueue.main.async { // Due to async, the return of checkRequirements is not ok
+                if let notificationSettings = UIApplication.shared.currentUserNotificationSettings {
+                    if notificationSettings.types == UIUserNotificationType() {
+                        errors.append("Error: notification permission missing")
+                    } else {
+                        if !notificationSettings.types.contains(.sound) {
+                            warnings.append("Warning: notification settings - sound permission missing")
+                        }
 
-	                    if !notificationSettings.types.contains(.alert) {
-	                        warnings.append("Warning: notification settings - alert permission missing")
-	                    }
+                        if !notificationSettings.types.contains(.alert) {
+                            warnings.append("Warning: notification settings - alert permission missing")
+                        }
 
-	                    if !notificationSettings.types.contains(.badge) {
-	                        warnings.append("Warning: notification settings - badge permission missing")
-	                    }
-	                }
-	            } else {
-	                errors.append("Error: notification permission missing")
-	            }
-			}
+                        if !notificationSettings.types.contains(.badge) {
+                            warnings.append("Warning: notification settings - badge permission missing")
+                        }
+                    }
+                } else {
+                    errors.append("Error: notification permission missing")
+                }
+            }
         }
 
         let ok = (errors.count == 0)

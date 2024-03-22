@@ -998,7 +998,7 @@ public struct SwiftData {
 
         let imagePath = imageDirPath.stringByAppendingPathComponent(imageID)
 
-        let imageAsData = UIImagePNGRepresentation(image)
+        let imageAsData = image.pngData()
         if !((try? imageAsData!.write(to: URL(fileURLWithPath: imagePath), options: [.atomic])) != nil) {
             print("Error saving image")
             return nil
@@ -1615,7 +1615,7 @@ extension SwiftData.SQLiteDB {
         var newSql = ""
         var bindIndex = 0
         var i = false
-        for char in sql.characters {
+        for char in sql {
             if char == "?" {
                 if bindIndex > objects.count - 1 {
                     print("SwiftData Error -> During: Object Binding")
@@ -1631,7 +1631,7 @@ extension SwiftData.SQLiteDB {
                         print("                -> Code: 203 - Object to bind as identifier must be a String at array location: \(bindIndex)")
                         return ("", 203)
                     }
-                    newSql = newSql.substring(to: newSql.characters.index(before: newSql.endIndex))
+                    newSql = newSql.substring(to: newSql.index(before: newSql.endIndex))
                 } else {
                     obj = escapeValue(objects[bindIndex])
                 }
@@ -1680,7 +1680,7 @@ extension SwiftData.SQLiteDB {
             if obj is Data {
                 let str = "\(obj)"
                 var newStr = ""
-                for char in str.characters {
+                for char in str {
                     if char != "<" && char != ">" && char != " " {
                         newStr.append(char)
                     }
@@ -1723,7 +1723,7 @@ extension SwiftData.SQLiteDB {
     //escape string
     func escapeStringValue(_ str: String) -> String {
         var escapedStr = ""
-        for char in str.characters {
+        for char in str {
             if char == "'" {
                 escapedStr += "'"
             }
@@ -1736,7 +1736,7 @@ extension SwiftData.SQLiteDB {
     //escape string
     func escapeStringIdentifier(_ str: String) -> String {
         var escapedStr = ""
-        for char in str.characters {
+        for char in str {
             if char == "\"" {
                 escapedStr += "\""
             }
