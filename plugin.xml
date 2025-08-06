@@ -51,7 +51,9 @@
 		<preference name="AndroidXEnabled" value="true" />
 		<framework src="com.google.android.gms:play-services-location:$GOOGLE_API_VERSION"/>
 		<framework src="androidx.annotation:annotation:1.1.0"/>
-        <lib-file src="src/android/libs/gson-2.3.jar" />
+        
+        <!-- Conflict with the one we already have in OS apps -->
+        <!-- <lib-file src="src/android/libs/gson-2.3.jar" /> -->
 
         <config-file target="config.xml" parent="/*">
             <feature name="GeofencePlugin">
