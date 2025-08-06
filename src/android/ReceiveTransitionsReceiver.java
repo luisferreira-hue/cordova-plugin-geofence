@@ -13,13 +13,6 @@ import android.util.Log;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,11 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.net.ssl.HttpsURLConnection;
-
 // https://codelabs.developers.google.com/codelabs/background-location-updates-android-o/#4
 public class ReceiveTransitionsReceiver extends BroadcastReceiver {
-    protected static final String GeofenceTransitionIntent = "com.cowbell.cordova.geofence.TRANSITION";
     protected BeepHelper beepHelper;
     protected GeoNotificationNotifier notifier;
     protected GeoNotificationStore store;
@@ -50,7 +40,6 @@ public class ReceiveTransitionsReceiver extends BroadcastReceiver {
         Logger.setLogger(new Logger(GeofencePlugin.TAG, context, false));
         Logger logger = Logger.getLogger();
         logger.log(Log.DEBUG, "ReceiveTransitionsIntentService - onHandleIntent");
-        //Intent broadcastIntent = new Intent(GeofenceTransitionIntent);
         notifier = new GeoNotificationNotifier(
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE),
                 context
@@ -62,7 +51,7 @@ public class ReceiveTransitionsReceiver extends BroadcastReceiver {
         if (geofencingEvent.hasError()) {
             // Get the error code with a static method
             int errorCode = geofencingEvent.getErrorCode();
-            String error = "Location Services error: " + Integer.toString(errorCode);
+            String error = "Location Services error: " + errorCode;
             // Log the error
             logger.log(Log.ERROR, error);
             //broadcastIntent.putExtra("error", error);
@@ -110,9 +99,6 @@ public class ReceiveTransitionsReceiver extends BroadcastReceiver {
                 logger.log(Log.ERROR, error);
                 //broadcastIntent.putExtra("error", error);
             }
-
-
-            //sendBroadcast(broadcastIntent);
 
             for (GeoNotification geoNotification : geoNotifications) {
                 if (geoNotification.url != null) {

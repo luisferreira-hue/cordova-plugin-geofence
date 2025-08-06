@@ -7,7 +7,6 @@ import android.net.Uri;
 import com.google.gson.annotations.Expose;
 
 public class Notification {
-    private Context context;
     private AssetUtil assets;
 
     @Expose public int id;
@@ -20,7 +19,6 @@ public class Notification {
     @Expose public boolean openAppOnClick;
 
     public void setContext(Context context) {
-        this.context = context;
         this.assets = AssetUtil.getInstance(context);
     }
 

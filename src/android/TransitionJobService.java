@@ -4,9 +4,6 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.os.PersistableBundle;
 import android.util.Log;
-
-import com.google.android.gms.location.Geofence;
-
 import java.io.BufferedWriter;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;

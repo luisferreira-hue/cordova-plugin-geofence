@@ -28,7 +28,6 @@ public class GeofencePlugin extends CordovaPlugin {
     public static final String ERROR_GEOFENCE_LIMIT_EXCEEDED = "GEOFENCE_LIMIT_EXCEEDED";
 
     private GeoNotificationManager geoNotificationManager;
-    private Context context;
     public static CordovaWebView webView = null;
 
     private class Action {
@@ -56,7 +55,7 @@ public class GeofencePlugin extends CordovaPlugin {
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
         GeofencePlugin.webView = webView;
-        context = this.cordova.getActivity().getApplicationContext();
+        Context context = this.cordova.getActivity().getApplicationContext();
         Logger.setLogger(new Logger(TAG, context, false));
         geoNotificationManager = new GeoNotificationManager(context);
     }
@@ -67,9 +66,9 @@ public class GeofencePlugin extends CordovaPlugin {
         Log.d(TAG, "GeofencePlugin execute action: " + action + " args: " + args.toString());
         executedAction = new Action(action, args, callbackContext);
 
-        cordova.getThreadPool().execute(new Runnable() {
-            public void run() {
-                if (action.equals("addOrUpdate")) {
+        cordova.getThreadPool().execute(() -> {
+            switch (action) {
+                case "addOrUpdate": {
                     List<GeoNotification> geoNotifications = new ArrayList<GeoNotification>();
                     for (int i = 0; i < args.length(); i++) {
                         GeoNotification not = parseFromJSONObject(args.optJSONObject(i));
@@ -78,24 +77,32 @@ public class GeofencePlugin extends CordovaPlugin {
                         }
                     }
                     geoNotificationManager.addGeoNotifications(geoNotifications, callbackContext);
-                } else if (action.equals("remove")) {
+                    break;
+                }
+                case "remove":
                     List<String> ids = new ArrayList<String>();
                     for (int i = 0; i < args.length(); i++) {
                         ids.add(args.optString(i));
                     }
                     geoNotificationManager.removeGeoNotifications(ids, callbackContext);
-                } else if (action.equals("removeAll")) {
+                    break;
+                case "removeAll":
                     geoNotificationManager.removeAllGeoNotifications(callbackContext);
-                } else if (action.equals("getWatched")) {
+                    break;
+                case "getWatched": {
                     List<GeoNotification> geoNotifications = geoNotificationManager.getWatched();
                     callbackContext.success(Gson.get().toJson(geoNotifications));
-                } else if (action.equals("initialize")) {
-                    initialize(callbackContext);
-                } else if (action.equals("requestPermissions")) {
-                    requestPermissions(callbackContext);
-                } else if (action.equals("deviceReady")) {
-                    deviceReady();
+                    break;
                 }
+                case "initialize":
+                    initialize();
+                    break;
+                case "requestPermissions":
+                    requestPermissions(callbackContext);
+                    break;
+                case "deviceReady":
+                    deviceReady();
+                    break;
             }
         });
 
@@ -134,12 +141,12 @@ public class GeofencePlugin extends CordovaPlugin {
         }
     }
 
-    private void initialize(CallbackContext callbackContext) {
+    private void initialize() {
 		Log.d(TAG, "Initialize empty");
     }
 	
     private void requestPermissions(CallbackContext callbackContext) {
-		Log.d(TAG, "requestPersmissions");
+		Log.d(TAG, "requestPermissions");
         String[] permissions = {
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION
