@@ -482,8 +482,13 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
                 //formatter.locale = Locale(identifier: "en_US")
                 
-                let jsonDict = ["geofenceId": geoNotification["id"].stringValue, "transition": geoNotification["transitionType"].intValue == 1 ? "ENTER" : "EXIT", "date": dateFormatter.string(from: Date())]
-                let jsonData = try! JSONSerialization.data(withJSONObject: jsonDict, options: [])
+                let payload: [String: Any] = [
+                                "geofenceId": geoNotification["id"].stringValue,
+                                "transition": (geoNotification["transitionType"].intValue == 1 ? "ENTER" : "EXIT"),
+                                "date": dateFormatter.string(from: Date()),
+                                "userId": geoNotification["userId"].stringValue
+                            ]
+                let jsonData = try! JSONSerialization.data(withJSONObject: payload, options: [])
                 
                 var request = URLRequest(url: url)
                 request.httpMethod = "post"
@@ -491,18 +496,21 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 request.setValue(geoNotification["authorization"].stringValue, forHTTPHeaderField: "Authorization")
                 request.httpBody = jsonData
                 
-                let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+                let task = URLSession.shared.dataTask(with: request) { _, response, error in
                     if let error = error {
-                        print("error:", error)
+                        print("❌ Network error:", error)
                         return
                     }
-                    
-                    do {
-                        guard let data = data else { return }
-                        guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: AnyObject] else { return }
-                        print("json:", json)
-                    } catch {
-                        print("error:", error)
+
+                    guard let http = response as? HTTPURLResponse else {
+                        print("⚠️ No HTTPURLResponse")
+                        return
+                    }
+
+                    if (200...299).contains(http.statusCode) {
+                        print("✅ POST OK (\(http.statusCode))")
+                    } else {
+                        print("⚠️ POST returned status \(http.statusCode)")
                     }
                 }
                 
