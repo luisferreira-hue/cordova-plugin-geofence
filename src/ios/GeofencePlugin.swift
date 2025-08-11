@@ -9,6 +9,7 @@
 import Foundation
 import AudioToolbox
 import WebKit
+import SQLite
 
 let TAG = "GeofencePlugin"
 let iOS8 = floor(NSFoundationVersionNumber) > floor(NSFoundationVersionNumber_iOS_7_1)
@@ -47,7 +48,7 @@ func log(_ messages: [String]) {
 
     @objc
     func initialize(_ command: CDVInvokedUrlCommand) {
-        log("Plugin initialization empty")
+        log(">>>> Plugin initialization empty")
         //let faker = GeofenceFaker(manager: geoNotificationManager)
         //faker.start()
 
@@ -55,8 +56,8 @@ func log(_ messages: [String]) {
         //     promptForNotificationPermission()
         // }
         //
-        // geoNotificationManager = GeoNotificationManager()
-        // geoNotificationManager.registerPermissions()
+        geoNotificationManager = GeoNotificationManager()
+        geoNotificationManager.registerPermissions()
         //
         // let (ok, warnings, errors) = geoNotificationManager.checkRequirements()
         //
@@ -147,9 +148,19 @@ func log(_ messages: [String]) {
     @objc
     func getWatched(_ command: CDVInvokedUrlCommand) {
         DispatchQueue.global(priority: priority).async {
-            let watched = self.geoNotificationManager.getWatchedGeoNotifications()!
-            let watchedJsonString = watched.description
+            let watched = self.geoNotificationManager.getWatchedGeoNotifications()
+
+            guard let jsonData = try? JSONSerialization.data(withJSONObject: watched, options: []),
+                  let watchedJsonString = String(data: jsonData, encoding: .utf8) else {
+                DispatchQueue.main.async {
+                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Failed to serialize watched geonotifications")
+                    self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                }
+                return
+            }
+
             DispatchQueue.main.async {
+                print("📤 Sending GeoNotifications JSON to JS/OutSystems:\n\(watchedJsonString)")
                 let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: watchedJsonString)
                 self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
             }
@@ -231,32 +242,35 @@ class GeofenceFaker {
     }
 
     func start() {
-         DispatchQueue.global(priority: priority).async {
+        DispatchQueue.global(priority: priority).async {
             while (true) {
                 log("FAKER")
                 let notify = arc4random_uniform(4)
                 if notify == 0 {
                     log("FAKER notify chosen, need to pick up some region")
-                    var geos = self.geoNotificationManager.getWatchedGeoNotifications()!
-                    if geos.count > 0 {
-                        //WTF Swift??
-                        let index = arc4random_uniform(UInt32(geos.count))
-                        let geo = geos[Int(index)]
-                        let id = geo["id"].stringValue
-                        DispatchQueue.main.async {
-                            if let region = self.geoNotificationManager.getMonitoredRegion(id) {
-                                log("FAKER Trigger didEnterRegion")
-                                self.geoNotificationManager.locationManager(
-                                    self.geoNotificationManager.locationManager,
-                                    didEnterRegion: region
-                                )
+                    let geos = self.geoNotificationManager.getWatchedGeoNotifications()
+                    if !geos.isEmpty {
+                        let index = Int(arc4random_uniform(UInt32(geos.count)))
+                        let geo = geos[index]
+                        
+                        if let id = geo["id"] as? String {
+                            DispatchQueue.main.async {
+                                if let region = self.geoNotificationManager.getMonitoredRegion(id) {
+                                    log("FAKER Trigger didEnterRegion")
+                                    self.geoNotificationManager.locationManager(
+                                        self.geoNotificationManager.locationManager,
+                                        didEnterRegion: region
+                                    )
+                                }
                             }
+                        } else {
+                            log("❌ Couldn't extract 'id' from geo object")
                         }
                     }
                 }
                 Thread.sleep(forTimeInterval: 3)
             }
-         }
+        }
     }
 
     func stop() {
@@ -267,13 +281,19 @@ class GeofenceFaker {
 @available(iOS 8.0, *)
 class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
     let locationManager = CLLocationManager()
-    let store = GeoNotificationStore()
+    let store = GeoNotificationStore.shared
 
     override init() {
         log("GeoNotificationManager init")
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
+      //  locationManager.startUpdatingLocation()
+        
+        
+        if let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            print("📁 Documents folder path: \(documentsPath.path)")
+        }
     }
 
     func registerPermissions() {
@@ -283,7 +303,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
     }
 
     func addOrUpdateGeoNotification(_ geoNotification: JSON) {
-        log("GeoNotificationManager addOrUpdate")
+        log(">>>>>>>> GeoNotificationManager addOrUpdate")
 
         let (_, warnings, errors) = checkRequirements()
 
@@ -318,11 +338,11 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         var warnings = [String]()
 
         if (!CLLocationManager.isMonitoringAvailable(for: CLRegion.self)) {
-            errors.append("Geofencing not available")
+            errors.append(">>>>>>>> Geofencing not available")
         }
 
         if (!CLLocationManager.locationServicesEnabled()) {
-            errors.append("Error: Locationservices not enabled")
+            errors.append(">>>>>>>> Error: Locationservices not enabled")
         }
 
         let authStatus = CLLocationManager.authorizationStatus()
@@ -360,7 +380,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         return (ok, warnings, errors)
     }
 
-    func getWatchedGeoNotifications() -> [JSON]? {
+    func getWatchedGeoNotifications() -> [[String: Any]] {
         return store.getAll()
     }
 
@@ -379,7 +399,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         store.remove(id)
         let region = getMonitoredRegion(id)
         if (region != nil) {
-            log("Stoping monitoring region \(id)")
+            log(">>>>>>>> Stoping monitoring region \(id)")
             locationManager.stopMonitoring(for: region!)
         }
     }
@@ -388,13 +408,16 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         store.clear()
         for object in locationManager.monitoredRegions {
             let region = object
-            log("Stoping monitoring region \(region.identifier)")
+            log(">>>>>>>> Stoping monitoring region \(region.identifier)")
             locationManager.stopMonitoring(for: region)
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        log("update location")
+        log(">>>>>>>> update location")
+        guard let newLocation = locations.last else { return }
+
+        log(">>>>📍 Location updated: \(newLocation.coordinate.latitude), \(newLocation.coordinate.longitude)")
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -402,11 +425,11 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFinishDeferredUpdatesWithError error: Error?) {
-        log("deferred fail error: \(error)")
+        log(">>>>>>>> deferred fail error: \(error)")
     }
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        log("Entering region \(region.identifier)")
+        log(">>>>>>>> Entering region \(region.identifier)")
         handleTransition(region, transitionType: 1)
     }
 
@@ -421,16 +444,25 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
             let lng = (region as! CLCircularRegion).center.longitude
             let radius = (region as! CLCircularRegion).radius
 
-            log("Starting monitoring for region \(region) lat \(lat) lng \(lng) of radius \(radius)")
+            log(">>>>>>>> Starting monitoring for region \(region) lat \(lat) lng \(lng) of radius \(radius)")
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didDetermineState state: CLRegionState, for region: CLRegion) {
-        log("State for region " + region.identifier)
+        log(">>>>>>>> State for region " + region.identifier)
     }
 
     func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-        log("Monitoring region " + region!.identifier + " failed \(error)" )
+        log(">>>>>>>> Monitoring region " + region!.identifier + " failed \(error)" )
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        if status == .authorizedAlways || status == .authorizedWhenInUse {
+            log("✅ Authorized, starting updates")
+            locationManager.startUpdatingLocation()
+        } else {
+            log("❌ Not authorized: \(status.rawValue)")
+        }
     }
 
     func handleTransition(_ region: CLRegion!, transitionType: Int) {
@@ -503,108 +535,129 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
 }
 
 class GeoNotificationStore {
-    init() {
-        createDBStructure()
+    static let shared = GeoNotificationStore()
+
+    private var db: Connection!
+    private let geoNotifications = Table("GeoNotifications")
+    private let id = SQLite.Expression<String>("id")
+    private let data = SQLite.Expression<String>("data")
+
+    private init() {
+        setupDatabase()
     }
 
-    func createDBStructure() {
-        let (tables, err) = SD.existingTables()
-
-        if (err != nil) {
-            log("Cannot fetch sqlite tables: \(err)")
-            return
-        }
-
-        if (tables.filter { $0 == "GeoNotifications" }.count == 0) {
-            if let err = SD.executeChange("CREATE TABLE GeoNotifications (ID TEXT PRIMARY KEY, Data TEXT)") {
-                //there was an error during this function, handle it here
-                log("Error while creating GeoNotifications table: \(err)")
-            } else {
-                //no error, the table was created successfully
-                log("GeoNotifications table was created successfully")
-            }
+    private func setupDatabase() {
+        do {
+            let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+            db = try Connection("\(path)/GeoNotifications.sqlite3")
+            try db.run(geoNotifications.create(ifNotExists: true) { t in
+                t.column(id, primaryKey: true)
+                t.column(data)
+            })
+            print("✅ GeoNotifications database created or opened successfully")
+        } catch {
+            print("❌ Error setting up GeoNotifications database: \(error)")
         }
     }
 
     func addOrUpdate(_ geoNotification: JSON) {
-        NSLog("geoNotification.description: %@", geoNotification.description)
-        if (findById(geoNotification["id"].stringValue) != nil) {
+        let geoId = geoNotification["id"].stringValue
+        if findById(geoId) != nil {
             update(geoNotification)
-        }
-        else {
+        } else {
             add(geoNotification)
         }
     }
 
     func add(_ geoNotification: JSON) {
-        let id = geoNotification["id"].stringValue
-        let err = SD.executeChange("INSERT INTO GeoNotifications (Id, Data) VALUES(?, ?)",
-            withArgs: [id as AnyObject, geoNotification.description as AnyObject])
+        let geoId = geoNotification["id"].stringValue
+        
+        guard let rawData = try? geoNotification.rawData(),
+              let jsonString = String(data: rawData, encoding: .utf8) else {
+            print("❌ Failed to serialize JSON for GeoNotification \(geoId)")
+            return
+        }
+        
+        do {
+            print("💾 Will insert JSON:\n\(jsonString)")
+            
+            try db.run(geoNotifications.insert(
+                id <- geoId,
+                data <- jsonString
+            ))
 
-        if err != nil {
-            log("Error while adding \(id) GeoNotification: \(err)")
+            print("✅ GeoNotification \(geoId) inserted successfully")
+        } catch {
+            print("❌ Error inserting GeoNotification \(geoId): \(error)")
         }
     }
 
     func update(_ geoNotification: JSON) {
-        let id = geoNotification["id"].stringValue
-        let err = SD.executeChange("UPDATE GeoNotifications SET Data = ? WHERE Id = ?",
-            withArgs: [geoNotification.description as AnyObject, id as AnyObject])
+        let geoId = geoNotification["id"].stringValue
+        guard let rawData = try? geoNotification.rawData(),
+              let jsonString = String(data: rawData, encoding: .utf8) else {
+            print("❌ Failed to serialize JSON for GeoNotification \(geoId)")
+            return
+        }
 
-        if err != nil {
-            log("Error while adding \(id) GeoNotification: \(err)")
+        let item = geoNotifications.filter(id == geoId)
+        do {
+            try db.run(item.update(data <- jsonString))
+            print("✅ GeoNotification \(geoId) updated")
+        } catch {
+            print("❌ Error updating GeoNotification \(geoId): \(error)")
         }
     }
 
-    func findById(_ id: String) -> JSON? {
-        let (resultSet, err) = SD.executeQuery("SELECT * FROM GeoNotifications WHERE Id = ?", withArgs: [id as AnyObject])
-
-        if err != nil {
-            //there was an error during the query, handle it here
-            log("Error while fetching \(id) GeoNotification table: \(err)")
-            return nil
-        } else {
-            if (resultSet.count > 0) {
-                let jsonString = resultSet[0]["Data"]!.asString()!
-                return JSON(data: jsonString.data(using: String.Encoding.utf8)!)
-            }
-            else {
-                return nil
-            }
-        }
-    }
-
-    func getAll() -> [JSON]? {
-        let (resultSet, err) = SD.executeQuery("SELECT * FROM GeoNotifications")
-
-        if err != nil {
-            //there was an error during the query, handle it here
-            log("Error while fetching from GeoNotifications table: \(err)")
-            return nil
-        } else {
-            var results = [JSON]()
-            for row in resultSet {
-                if let data = row["Data"]?.asString() {
-                    results.append(JSON(data: data.data(using: String.Encoding.utf8)!))
+    func findById(_ geoId: String) -> JSON? {
+        let item = geoNotifications.filter(id == geoId)
+        do {
+            if let row = try db.pluck(item) {
+                let jsonString = row[data]
+                if let jsonData = jsonString.data(using: .utf8) {
+                    return try JSON(data: jsonData)
                 }
             }
-            return results
+        } catch {
+            print("❌ Error fetching GeoNotification \(geoId): \(error)")
         }
+        return nil
     }
 
-    func remove(_ id: String) {
-        let err = SD.executeChange("DELETE FROM GeoNotifications WHERE Id = ?", withArgs: [id as AnyObject])
+    func getAll() -> [[String: Any]] {
+        var results = [[String: Any]]()
+        
+        for row in try! db.prepare(geoNotifications) {
+            let jsonString = row[data]
+            print("📦 Fetched JSON string: \(jsonString)")
 
-        if err != nil {
-            log("Error while removing \(id) GeoNotification: \(err)")
+            if let jsonData = jsonString.data(using: .utf8),
+               let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []),
+               let jsonDict = jsonObject as? [String: Any] {
+                results.append(jsonDict)
+            } else {
+                print("❌ Couldn't deserialize json string")
+            }
+        }
+        return results
+    }
+
+    func remove(_ geoId: String) {
+        let item = geoNotifications.filter(id == geoId)
+        do {
+            try db.run(item.delete())
+            print("✅ GeoNotification \(geoId) removed")
+        } catch {
+            print("❌ Error deleting GeoNotification \(geoId): \(error)")
         }
     }
 
     func clear() {
-        let err = SD.executeChange("DELETE FROM GeoNotifications")
-
-        if err != nil {
-            log("Error while deleting all from GeoNotifications: \(err)")
+        do {
+            try db.run(geoNotifications.delete())
+            print("✅ All GeoNotifications deleted")
+        } catch {
+            print("❌ Error deleting all GeoNotifications: \(error)")
         }
     }
 }

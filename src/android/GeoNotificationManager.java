@@ -37,7 +37,7 @@ public class GeoNotificationManager {
 
     public void loadFromStorageAndInitializeGeofences() {
         List<GeoNotification> geoNotifications = geoNotificationStore.getAll();
-        geoFences = new ArrayList<Geofence>();
+        geoFences = new ArrayList<>();
         for (GeoNotification geo : geoNotifications) {
             geoFences.add(geo.toGeofence());
         }
@@ -49,32 +49,27 @@ public class GeoNotificationManager {
     }
 
     public List<GeoNotification> getWatched() {
-        List<GeoNotification> geoNotifications = geoNotificationStore.getAll();
-        return geoNotifications;
+        return geoNotificationStore.getAll();
     }
 
     private boolean areGoogleServicesAvailable() {
         GoogleApiAvailability api = GoogleApiAvailability.getInstance();
         int resultCode = api.isGooglePlayServicesAvailable(context);
 
-        if (ConnectionResult.SUCCESS == resultCode) {
-            return true;
-        } else {
-            return false;
-        }
+        return ConnectionResult.SUCCESS == resultCode;
     }
 
     public void addGeoNotifications(List<GeoNotification> geoNotifications,
                                     final CallbackContext callback) {
-        List<Geofence> newGeofences = new ArrayList<Geofence>();
+        List<Geofence> list = new ArrayList<>();
         for (GeoNotification geo : geoNotifications) {
             geoNotificationStore.setGeoNotification(geo);
-            newGeofences.add(geo.toGeofence());
+            list.add(geo.toGeofence());
         }
         AddGeofenceCommand geoFenceCmd = new AddGeofenceCommand(
             context,
             pendingIntent,
-            newGeofences
+                list
         );
         if (callback != null) {
             geoFenceCmd.addListener(new CommandExecutionHandler(callback));
@@ -108,9 +103,14 @@ public class GeoNotificationManager {
      */
     private PendingIntent getTransitionPendingIntent() {
         Intent intent = new Intent(context, ReceiveTransitionsReceiver.class);
-        //intent.setAction(ReceiveTransitionsReceiver.GeofenceTransitionIntent);
         logger.log(Log.DEBUG, "Geofence broadcast intent created");
-        return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        return PendingIntent.getBroadcast(context, 0, intent, flags);
     }
 
 }

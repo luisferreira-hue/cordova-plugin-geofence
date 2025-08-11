@@ -3,8 +3,12 @@ package com.cowbell.cordova.geofence;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 import android.Manifest;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -29,6 +33,8 @@ public class GeofencePlugin extends CordovaPlugin {
 
     private GeoNotificationManager geoNotificationManager;
     public static CordovaWebView webView = null;
+    private static final int LOCATION_REQUEST_CODE = 1001;
+    private static final int BACKGROUND_LOCATION_REQUEST_CODE = 1002;
 
     private class Action {
         public String action;
@@ -69,7 +75,7 @@ public class GeofencePlugin extends CordovaPlugin {
         cordova.getThreadPool().execute(() -> {
             switch (action) {
                 case "addOrUpdate": {
-                    List<GeoNotification> geoNotifications = new ArrayList<GeoNotification>();
+                    List<GeoNotification> geoNotifications = new ArrayList<>();
                     for (int i = 0; i < args.length(); i++) {
                         GeoNotification not = parseFromJSONObject(args.optJSONObject(i));
                         if (not != null) {
@@ -114,8 +120,7 @@ public class GeofencePlugin extends CordovaPlugin {
     }
 
     private GeoNotification parseFromJSONObject(JSONObject object) {
-        GeoNotification geo = GeoNotification.fromJson(object.toString());
-        return geo;
+        return GeoNotification.fromJson(object.toString());
     }
 
     public static void onTransitionReceived(List<GeoNotification> notifications) {
@@ -144,19 +149,30 @@ public class GeofencePlugin extends CordovaPlugin {
     private void initialize() {
 		Log.d(TAG, "Initialize empty");
     }
-	
+
     private void requestPermissions(CallbackContext callbackContext) {
-		Log.d(TAG, "requestPermissions");
+        Log.d(TAG, "requestPermissions");
+
         String[] permissions = {
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
         };
 
         if (!hasPermissions(permissions)) {
-			Log.d(TAG, "No permissions, request");
-            PermissionHelper.requestPermissions(this, 0, permissions);
+            Log.d(TAG, "No fine/coarse permissions, requesting with PermissionHelper");
+            PermissionHelper.requestPermissions(this, LOCATION_REQUEST_CODE, permissions);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                ContextCompat.checkSelfPermission(cordova.getContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+
+            Log.d(TAG, "Requesting ACCESS_BACKGROUND_LOCATION (Android 10+)");
+            ActivityCompat.requestPermissions(
+                    cordova.getActivity(),
+                    new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                    BACKGROUND_LOCATION_REQUEST_CODE
+            );
         } else {
-			Log.d(TAG, "Has permissions, doing nothing");
+            Log.d(TAG, "All permissions granted");
             callbackContext.success();
         }
     }
@@ -169,12 +185,12 @@ public class GeofencePlugin extends CordovaPlugin {
         return true;
     }
 
-    public void onRequestPermissionResult(int requestCode, String[] permissions,
-                                          int[] grantResults) throws JSONException {
+    @Override
+    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
         PluginResult result;
 
         if (executedAction != null) {
-            for (int r:grantResults) {
+            for (int r : grantResults) {
                 if (r == PackageManager.PERMISSION_DENIED) {
                     Log.d(TAG, "Permission Denied!");
                     result = new PluginResult(PluginResult.Status.ILLEGAL_ACCESS_EXCEPTION);
@@ -183,7 +199,25 @@ public class GeofencePlugin extends CordovaPlugin {
                     return;
                 }
             }
+
             Log.d(TAG, "Permission Granted!");
+
+            // If it was LOCATION permissions, now check if BACKGROUND is also needed
+            if (requestCode == LOCATION_REQUEST_CODE &&
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    ContextCompat.checkSelfPermission(cordova.getContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+
+                Log.d(TAG, "Requesting ACCESS_BACKGROUND_LOCATION after LOCATION permissions granted");
+                ActivityCompat.requestPermissions(
+                        cordova.getActivity(),
+                        new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                        BACKGROUND_LOCATION_REQUEST_CODE
+                );
+                return;
+            }
+
+            // If we reached here, all necessary permissions are granted
             execute(executedAction);
             executedAction = null;
         }

@@ -1,5 +1,6 @@
 package com.cowbell.cordova.geofence;
 
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.util.Log;
@@ -28,6 +29,7 @@ public class AddGeofenceCommand extends AbstractGoogleServiceCommand {
         this.pendingIntent = pendingIntent;
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void ExecuteCustomCode() {
         logger.log(Log.DEBUG, "Adding new geofences...");
