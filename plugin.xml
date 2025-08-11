@@ -158,6 +158,14 @@
         <source-file src="src/ios/SwiftyJson.swift"/>
         <framework src="libsqlite3.dylib"/>
         <framework src="WebKit.framework" weak="true" />
-        <pod name="SQLite.swift" spec="~> 0.13.3" />
+     <!--<pod name="SQLite.swift" spec="~> 0.13.3" />-->
+        <podspec>
+            <config>
+                <source url="https://github.com/CocoaPods/Specs.git"/>
+            </config>
+            <pods use-frameworks="true">
+                <pod name="SQLite.swift" spec="~> 4.11.0"/>
+            </pods>
+        </podspec>
     </platform>
 </plugin>
