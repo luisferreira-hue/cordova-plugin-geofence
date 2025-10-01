@@ -478,6 +478,14 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                         errorMessage = error.localizedDescription
                     }
                 }
+
+                //Send a notification to the device
+                if geoNotification["notification"].isExists() {
+            		if !errorMessage.isEmpty {
+                			geoNotification["notification"]["text"] = errorMessage
+            		}
+            		notifyAbout(geoNotification)
+                }
                 
                 task.resume()
             }
