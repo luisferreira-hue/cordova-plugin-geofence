@@ -459,13 +459,13 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 request.setValue(geoNotification["authorization"].stringValue, forHTTPHeaderField: "Authorization")
                 request.httpBody = jsonData
 
-                var errorMessage = "" 
+                var errorMessage = ""
 
                 //Call the callback API
                 let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                     if let error = error {
                         print("error:", error)
-                        errorMessage = error
+                        errorMessage = error.localizedDescription
                         return
                     }
                     
@@ -475,7 +475,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                         print("json:", json)
                     } catch {
                         print("error:", error)
-                        errorMessage = error
+                        errorMessage = error.localizedDescription
                     }
                 }
                 
