@@ -437,9 +437,9 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         if var geoNotification = store.findById(region.identifier) {
             geoNotification["transitionType"].int = transitionType
 
-            //if geoNotification["notification"].isExists() {
-            //    notifyAbout(geoNotification)
-            //}
+            if geoNotification["notification"].isExists() {
+                notifyAbout(geoNotification)
+            }
 
             if geoNotification["url"].isExists() {
                 log("Should post to " + geoNotification["url"].stringValue)
@@ -458,14 +458,10 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 request.setValue(geoNotification["authorization"].stringValue, forHTTPHeaderField: "Authorization")
                 request.httpBody = jsonData
-
-                var errorMessage = ""
-
-                //Call the callback API
+                
                 let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                     if let error = error {
                         print("error:", error)
-                        errorMessage = error.localizedDescription
                         return
                     }
                     
@@ -475,20 +471,12 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                         print("json:", json)
                     } catch {
                         print("error:", error)
-                        errorMessage = error.localizedDescription
-                    }
-
-                    //Send a notification to the device
-                    if geoNotification["notification"].isExists() {
-            		    if !errorMessage.isEmpty {
-                			//geoNotification["notification"]["text"].string = errorMessage
-                        }
-            		//notifyAbout(geoNotification)
                     }
                 }
+                
+                task.resume()
             }
-            task.resume()
-
+            
             NotificationCenter.default.post(name: Notification.Name(rawValue: "handleTransition"), object: geoNotification.rawString(String.Encoding.utf8.rawValue, options: []))
         }
     }
