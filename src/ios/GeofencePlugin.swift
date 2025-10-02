@@ -464,9 +464,9 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                     if let error = error {
                         print("error:", error)
                         if geoNotification["notification"].isExists() {
-                            //notifyAbout(geoNotification)
-                           // notifyAbout(geoNotification)
-                            print("123")
+                            DispatchQueue.main.async {
+                                notifyAbout(geoNotification)
+                            }
                         }
                         return
                     }
