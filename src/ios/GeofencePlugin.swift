@@ -477,19 +477,18 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                         print("error:", error)
                         errorMessage = error.localizedDescription
                     }
-                }
 
-                task.resume()
-
-                //Send a notification to the device
-                if geoNotification["notification"].isExists() {
-            		if !errorMessage.isEmpty {
-                			geoNotification["notification"]["text"] = errorMessage
-                    }
+                    //Send a notification to the device
+                    if geoNotification["notification"].isExists() {
+            		    if !errorMessage.isEmpty {
+                			geoNotification["notification"]["text"].string = errorMessage
+                        }
             		//notifyAbout(geoNotification)
+                    }
                 }
             }
-            
+            task.resume()
+
             NotificationCenter.default.post(name: Notification.Name(rawValue: "handleTransition"), object: geoNotification.rawString(String.Encoding.utf8.rawValue, options: []))
         }
     }
