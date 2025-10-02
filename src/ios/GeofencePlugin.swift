@@ -466,7 +466,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                             notifyAbout(geoNotification)
                         }
                         return
-                        }
+                    }
                     do {
                         guard let data = data else { return }
                         guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: AnyObject] else { return }
