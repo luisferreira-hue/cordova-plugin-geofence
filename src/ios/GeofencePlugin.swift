@@ -481,7 +481,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                     //Send a notification to the device
                     if geoNotification["notification"].isExists() {
             		    if !errorMessage.isEmpty {
-                			geoNotification["notification"]["text"].string = errorMessage
+                			//geoNotification["notification"]["text"].string = errorMessage
                         }
             		//notifyAbout(geoNotification)
                     }
