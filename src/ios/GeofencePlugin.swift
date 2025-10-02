@@ -437,8 +437,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         if var geoNotification = store.findById(region.identifier) {
             geoNotification["transitionType"].int = transitionType
             
-            // 🔑 Fazemos uma cópia imutável para usar dentro do closure
-            let geoNotificationCopy = geoNotification
+            var notificationToSend = geoNotification  // <- variável que vamos decidir no fim
             
             if geoNotification["url"].isExists() {
                 log("Should post to " + geoNotification["url"].stringValue)
@@ -462,33 +461,33 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 request.setValue(geoNotification["authorization"].stringValue, forHTTPHeaderField: "Authorization")
                 request.httpBody = jsonData
                 
+                let semaphore = DispatchSemaphore(value: 0) // <- vamos esperar pela resposta
+                
                 let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                     if let error = error {
                         print("error:", error)
-                        
-                        if geoNotificationCopy["notification"].isExists() {
-                            DispatchQueue.main.async {
-                                notifyAbout(geoNotificationCopy)
-                            }
-                        }
-                        return
+                        var errorNotification = geoNotification
+                        errorNotification["notification"]["text"].string = error.localizedDescription
+                        notificationToSend = errorNotification
+                    } else {
+                        // sucesso → mantém o geoNotification original
+                        notificationToSend = geoNotification
                     }
-                    
-                    do {
-                        guard let data = data else { return }
-                        guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: AnyObject] else { return }
-                        print("json:", json)
-                    } catch {
-                        print("error:", error)
-                    }
+                    semaphore.signal()
                 }
                 
                 task.resume()
+                semaphore.wait() // <- esperar pelo fim do request
+            }
+            
+            // 🔔 Notificação única no fim (sucesso ou erro)
+            if notificationToSend["notification"].isExists() {
+                notifyAbout(notificationToSend)
             }
             
             NotificationCenter.default.post(
                 name: Notification.Name(rawValue: "handleTransition"),
-                object: geoNotification.rawString(String.Encoding.utf8.rawValue, options: [])
+                object: notificationToSend.rawString(String.Encoding.utf8.rawValue, options: [])
             )
         }
     }
