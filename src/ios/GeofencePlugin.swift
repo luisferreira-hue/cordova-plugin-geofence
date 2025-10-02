@@ -463,7 +463,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                     if let error = error {
                         print("error:", error)
                         //var errorNotification = geoNotification
-                        notifyAbout(geoNotification)
+                        //notifyAbout(geoNotification)
                         return
                         }
                     do {
