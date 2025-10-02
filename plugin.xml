@@ -140,8 +140,6 @@
             <string>$GEOFENCE_IN_USE_USAGE_DESCRIPTION</string>
         </config-file>
 
-		<preference name="UseSwiftLanguageVersion" value="5.0" />
-
         <config-file target="*-Info.plist" parent="UIBackgroundModes">
             <array>
                 <string>remote-notification</string>
