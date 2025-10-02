@@ -436,12 +436,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
     func handleTransition(_ region: CLRegion!, transitionType: Int) {
         if var geoNotification = store.findById(region.identifier) {
             geoNotification["transitionType"].int = transitionType
-
-            //if geoNotification["notification"].isExists() {
-                
-            //}
-            notifyAbout(geoNotification)
-
+            
             if geoNotification["url"].isExists() {
                 log("Should post to " + geoNotification["url"].stringValue)
                 let url = URL(string: geoNotification["url"].stringValue)!
@@ -460,14 +455,11 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 request.setValue(geoNotification["authorization"].stringValue, forHTTPHeaderField: "Authorization")
                 request.httpBody = jsonData
                 
+                var errorMessage = ""
+                
                 let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                     if let error = error {
                         print("error:", error)
-                        if geoNotification["notification"].isExists() {
-                            DispatchQueue.main.async {
-                                notifyAbout(geoNotification)
-                            }
-                        }
                         return
                     }
                     do {
@@ -480,6 +472,10 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 }
                 
                 task.resume()
+                if geoNotification["notification"].isExists() {
+                    notifyAbout(geoNotification)
+                }
+                
             }
             
             NotificationCenter.default.post(name: Notification.Name(rawValue: "handleTransition"), object: geoNotification.rawString(String.Encoding.utf8.rawValue, options: []))
