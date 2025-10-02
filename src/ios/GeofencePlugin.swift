@@ -462,9 +462,13 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                     if let error = error {
                         print("error:", error)
-                        return
-                    }
-                    
+                        var errorNotification = geoNotification
+                        } catch {
+                            errorNotification["notification"]["title"].stringValue = "Erro ao chamar API"
+                            errorNotification["notification"]["text"].stringValue = error.localizedDescription
+                            notifyAbout(errorNotification)
+                            return
+                        }
                     do {
                         guard let data = data else { return }
                         guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: AnyObject] else { return }
