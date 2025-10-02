@@ -464,8 +464,8 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                         print("error:", error)
                         var errorNotification = geoNotification
                         } catch {
-                            errorNotification["notification"]["title"].stringValue = "Erro ao chamar API"
-                            errorNotification["notification"]["text"].stringValue = error.localizedDescription
+                            //errorNotification["notification"]["title"].string = "Erro ao chamar API"
+                            //errorNotification["notification"]["text"].string = error.localizedDescription
                             notifyAbout(errorNotification)
                             return
                         }
