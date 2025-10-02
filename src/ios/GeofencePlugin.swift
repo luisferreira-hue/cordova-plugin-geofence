@@ -462,8 +462,9 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                     if let error = error {
                         print("error:", error)
-                        //var errorNotification = geoNotification
-                        //notifyAbout(geoNotification)
+                        if geoNotification["notification"].isExists() {
+                            notifyAbout(geoNotification)
+                        }
                         return
                         }
                     do {
