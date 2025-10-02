@@ -479,6 +479,8 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                     }
                 }
 
+                task.resume()
+
                 //Send a notification to the device
                 if geoNotification["notification"].isExists() {
             		if !errorMessage.isEmpty {
@@ -486,8 +488,6 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                     }
             		//notifyAbout(geoNotification)
                 }
-                
-                task.resume()
             }
             
             NotificationCenter.default.post(name: Notification.Name(rawValue: "handleTransition"), object: geoNotification.rawString(String.Encoding.utf8.rawValue, options: []))
