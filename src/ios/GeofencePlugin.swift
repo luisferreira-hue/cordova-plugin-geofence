@@ -437,9 +437,10 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         if var geoNotification = store.findById(region.identifier) {
             geoNotification["transitionType"].int = transitionType
 
-            if geoNotification["notification"].isExists() {
-                notifyAbout(geoNotification)
-            }
+            //if geoNotification["notification"].isExists() {
+                
+            //}
+            notifyAbout(geoNotification)
 
             if geoNotification["url"].isExists() {
                 log("Should post to " + geoNotification["url"].stringValue)
@@ -464,7 +465,7 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                         print("error:", error)
                         if geoNotification["notification"].isExists() {
                             //notifyAbout(geoNotification)
-                            notifyAbout(geoNotification)
+                           // notifyAbout(geoNotification)
                             print("123")
                         }
                         return
