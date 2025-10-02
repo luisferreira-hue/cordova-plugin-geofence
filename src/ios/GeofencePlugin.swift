@@ -437,6 +437,9 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         if var geoNotification = store.findById(region.identifier) {
             geoNotification["transitionType"].int = transitionType
             
+            // 🔑 Fazemos uma cópia imutável para usar dentro do closure
+            let geoNotificationCopy = geoNotification
+            
             if geoNotification["url"].isExists() {
                 log("Should post to " + geoNotification["url"].stringValue)
                 let url = URL(string: geoNotification["url"].stringValue)!
@@ -444,9 +447,13 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
                 dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-                //formatter.locale = Locale(identifier: "en_US")
                 
-                let jsonDict = ["geofenceId": geoNotification["id"].stringValue, "transition": geoNotification["transitionType"].intValue == 1 ? "ENTER" : "EXIT", "date": dateFormatter.string(from: Date())]
+                let jsonDict: [String: Any] = [
+                    "geofenceId": geoNotification["id"].stringValue,
+                    "transition": geoNotification["transitionType"].intValue == 1 ? "ENTER" : "EXIT",
+                    "date": dateFormatter.string(from: Date())
+                ]
+                
                 let jsonData = try! JSONSerialization.data(withJSONObject: jsonDict, options: [])
                 
                 var request = URLRequest(url: url)
@@ -455,13 +462,18 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 request.setValue(geoNotification["authorization"].stringValue, forHTTPHeaderField: "Authorization")
                 request.httpBody = jsonData
                 
-                var errorMessage = ""
-                
                 let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                     if let error = error {
                         print("error:", error)
+                        
+                        if geoNotificationCopy["notification"].isExists() {
+                            DispatchQueue.main.async {
+                                notifyAbout(geoNotificationCopy)
+                            }
+                        }
                         return
                     }
+                    
                     do {
                         guard let data = data else { return }
                         guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: AnyObject] else { return }
@@ -472,13 +484,12 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
                 }
                 
                 task.resume()
-                if geoNotification["notification"].isExists() {
-                    notifyAbout(geoNotification)
-                }
-                
             }
             
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "handleTransition"), object: geoNotification.rawString(String.Encoding.utf8.rawValue, options: []))
+            NotificationCenter.default.post(
+                name: Notification.Name(rawValue: "handleTransition"),
+                object: geoNotification.rawString(String.Encoding.utf8.rawValue, options: [])
+            )
         }
     }
 
